@@ -44,7 +44,7 @@ class Db {
 		$this->oCache = new \Memcache ();
 		$this->oCache->connect ( MEMCACHED_SERVER, MEMCACHED_PORT ) or die ( 'Could not connect to Memcahced server' );
 	}
-	public function getResults($sql, $type = MYSQL_ASSOC, $debug = false, $skipCache = false) {
+	public function getResults($sql, $type = MYSQL_ASSOC, $debug = false, $skipCache = true) {
 		$key = md5 ( $sql );
 		$cache_result = $this->oCache->get ( $key );
 		if ($cache_result && !$skipCache) {
@@ -117,7 +117,7 @@ class Db {
 		$cols = "";
 		$values = "";
 		foreach ( $assoc as $key => $value ) {
-			$cols .= "$key,";
+			$cols .= "`$key`,";
 			if ($value == "NOW()") {
 				$values .= addslashes ( $value ) . ",";
 			} else {
@@ -133,7 +133,12 @@ class Db {
 	public function update($table, $assoc, $condition, $debug = false) {
 		$sets = "";
 		foreach ( $assoc as $key => $value ) {
-			$sets .= " $key='" . addslashes ( $value ) . "',";
+			if ($value == "NOW()") {
+				$sets .= " `$key`=" . addslashes ( $value ) . ",";
+			} else {
+				$sets .= " `$key`='" . addslashes ( $value ) . "',";
+			}
+			
 		}
 		$sets = trim ( $sets, "," );
 		$sql = "UPDATE $table SET $sets WHERE $condition;";
